@@ -1,191 +1,181 @@
 # How Toxic Is X (Twitter)? A Topic Comparison
 
-A text analytics final project at KMUTT (group Goon.txt).
+A text analytics final project at KMUTT.
 
-We collect posts and replies from X (Twitter) on 6 topics. We score how toxic they are, and compare the topics with what we expected before we saw the data.
+We collected posts and replies from X on 6 topics, measured how toxic they are, and compared the result with what our group expected.
 
-## Objectives
+**Our three questions**
 
-1. Measure and compare the level of toxicity across topics on X, and between posts and replies.
-2. Find the most common type of toxicity in each topic (insult, obscene, threat, and so on).
-3. Compare a simple bad-word list with AI toxicity models (Detoxify and Twitter-RoBERTa) and show what the word list misses.
-
-## How it works
+1. Which topics are the most toxic? Are replies worse than posts?
+2. What kind of toxicity is most common in each topic (insult, swearing, threat...)?
+3. What does a simple bad-word list miss compared with AI models?
 
 ```
- 1. Expect          2. Pick           3. Scrape          4. Analyse
- ─────────          ───────           ─────────          ──────────
- Group votes   →    3 hashtags   →    collect_x.py  →    Notebook:
- High/Mid/Low       per topic         posts + replies    Detoxify, RoBERTa,
- per topic                                               bad-word list
+ 1. Choose topics  →  2. Test scrape  →  3. Real scrape  →  4. Clean  →  5. Analyse
+    (group vote)        (small runs)       (collect_x.py)     (notebook)    (notebook)
 ```
 
-### Step 1: Expect the toxicity level of each topic
+---
 
-Six members each rated 12 candidate topics as **High**, **Mid** or **Low** expected toxicity, working alone (`../vote_topic.csv`). For each topic we calculated the **% agreement** (the share of members who chose the most common level). It ranged from 67% to 100%.
+## 1. How we chose the topics
 
-Then we discussed the results together and chose 2 topics per level. All 6 chosen topics had **100% agreement**. For Low, 4 topics tied at 100%, so we chose the 2 most likely to have real conversations (enough replies).
+```
+ Ask X users  →  Group discussion  →  12 candidate topics  →  Vote alone  →  Pick 6 topics
+```
 
-| Expected level | Topic | Votes (H / M / L) | Agreement |
-|---|---|---|---|
-| High | US Politics | 6 / 0 / 0 | 100% |
-| High | K-pop Fandoms | 6 / 0 / 0 | 100% |
-| Mid | Movies & TV | 0 / 6 / 0 | 100% |
-| Mid | Tech & AI | 0 / 6 / 0 | 100% |
-| Low | Pets & Animals | 0 / 0 / 6 | 100% |
-| Low | Food & Cooking | 0 / 0 / 6 | 100% |
+**Ask X users.** First we asked three people who use X **often**, **sometimes** and **rarely** which topics they think are toxic on X. We asked people with different habits, because heavy users and light users see different parts of X.
 
-Later, we compare this guess with the measured result.
+| Person | Uses X | High | Mid | Low |
+|---|---|---|---|---|
+| Person 1 | Often | US politics, video game fandoms, artist fandoms | Sports (NBA, NFL, football) | none |
+| Person 2 | Sometimes | US politics (Trump, Biden), artist fandoms (K-pop, T-pop) | Sports, games, movies/anime, tech | Travel, pets/animals |
+| Person 3 | Rarely | School bullying | Games | Personal posts |
 
-### Step 2: Pick hashtags
+**Group discussion.** We talked about these answers together and made a list of 12 topics to vote on. Topics that came up more than once (politics, fandoms, sports, games) went on the list. We left some out:
 
-We use 3 neutral hashtags per topic. We avoid hashtags about one person, one company or one news event (for example `#musk`), because they pull in tweets from other topics and bias the result.
-
-| Expected level | Topic | Hashtags |
-|---|---|---|
-| High | US Politics | #uspolitics #Republicans #Democrats |
-| High | K-pop Fandoms | #bts #blackpink #kpop |
-| Mid | Movies | #movies #film #netflix |
-| Mid | Tech | #AI #tech #iphone |
-| Low | Pets & Animals | #pets #catlovers #doglovers |
-| Low | Food & Cooking | #recipe #cooking #foodie |
-
-### Step 3: Scrape the data with `collect_x.py`
-
-For each hashtag, the script collects:
-
-- **Posts**: original tweets with the hashtag (no retweets, no replies)
-- **Replies**: direct English replies under posts that have at least 10 replies
-
-All topics use the **same date window**, and tweets are collected **evenly from each day** of the window. (X search returns the newest tweets first, so one search for the whole week would only reach the last 1–2 days.)
-
-### Step 4: Analyse in a notebook (planned)
-
-| Step | Method | Output |
-|---|---|---|
-| Clean | Remove links, @mentions, duplicates and very short tweets | Clean dataset |
-| Bad-word list | Match each tweet against the LDNOOBW English list (token and regex matching, no training) | `bw_toxic` (0/1) |
-| Detoxify `unbiased` | AI model trained on Jigsaw comments | Toxicity score + 7 types |
-| Twitter-RoBERTa offensive | `cardiffnlp/twitter-roberta-base-offensive`, trained on tweets | Offensive score |
-| Hand labels | 200–300 random tweets labelled by 2 members each | Ground truth for Objective 3 |
-| Compare | % toxic per topic and type, ranking vs. the group's guess, precision/recall/F1 per method | Figures and tables |
-| Extra | LDA topic modelling on toxic tweets | What toxic tweets talk about |
-
-## Project status
-
-| Step | Status |
+| Left out | Why |
 |---|---|
-| Test X data collection (`test_twscrape.py`) | Done |
-| Vote on topics and expected levels | Done (% agreement + group discussion) |
-| Pick hashtags | Done |
-| Pilot scrape (small run to check the hashtags) | Done |
-| Full scrape | Next |
-| Clean, score and analyse (notebook) | Not started |
-| Report and slides | Not started |
+| School bullying | It is about toxicity by definition, so it would score high just because of the subject |
+| Personal posts | Too broad, and there is no hashtag for it. Most personal posts are about everyday life, so we used everyday topics instead: travel, pets, food and nature |
+| T-pop | Most tweets are in Thai, and our models only work in English |
 
-## Run the scraper
+So the calm topics in our list (travel, pets, food, nature) come from Person 2's Low answers and from Person 3's "personal posts".
 
-You need Python and an X account. Use a dedicated account, because X can restrict accounts that scrape.
+The 12 topics for the vote: US Politics, Video Games, K-pop Fandoms, Western Music Fandoms, Sports, Movies & TV, Anime, Tech & AI, Travel, Pets & Animals, Food & Cooking, Nature & Photography.
 
-**1. Install**
+**Vote.** Each of the 6 members rated the 12 topics alone as High, Mid or Low expected toxicity. For each topic we counted the **% agreement**: how many members chose the most common answer. It was between 67% and 100%.
 
-```powershell
-pip install twscrape pandas
-```
+**Discussion.** Then we talked together and picked 2 topics per level. We chose topics where everyone agreed (100%). Four Low topics tied, so we chose Pets and Food because they get more replies.
 
-**2. Add your login (first run only)**
+| Topic | Votes (H / M / L) | Agreement | Group level | Result |
+|---|---|---|---|---|
+| US Politics | 6 / 0 / 0 | 100% | High | **Selected** (High): everyone agreed |
+| K-pop Fandoms | 6 / 0 / 0 | 100% | High | **Selected** (High): everyone agreed |
+| Western Music Fandoms | 5 / 1 / 0 | 83% | High | Not everyone agreed, and K-pop already covers music fandoms |
+| Video Games | 4 / 2 / 0 | 67% | High | The group was split between High and Mid |
+| Sports | 2 / 4 / 0 | 67% | Mid | The group was split between High and Mid |
+| Anime | 2 / 4 / 0 | 67% | Mid | The group was split between High and Mid |
+| Movies & TV | 0 / 6 / 0 | 100% | Mid | **Selected** (Mid): everyone agreed |
+| Tech & AI | 0 / 6 / 0 | 100% | Mid | **Selected** (Mid): everyone agreed |
+| Pets & Animals | 0 / 0 / 6 | 100% | Low | **Selected** (Low): everyone agreed, and pet posts get replies |
+| Food & Cooking | 0 / 0 / 6 | 100% | Low | **Selected** (Low): everyone agreed, and viral food posts get replies |
+| Travel | 0 / 0 / 6 | 100% | Low | Tie at 100%, but fewer replies and many hotel/tour ads |
+| Nature & Photography | 0 / 0 / 6 | 100% | Low | Tie at 100%, but people mostly like these posts and rarely reply, and many accounts are bots |
 
-Log in to x.com, then copy `auth_token` and `ct0` from your browser's DevTools (Application > Cookies > `https://x.com`). Set them in the same PowerShell window you use to run the script:
+**Hashtags.** We picked 3 neutral hashtags per topic. We avoided hashtags about one person, company or news story (like `#musk` or `#nvidia`), because they pull in tweets about something else, for example Musk tweets would really be about politics.
 
-```powershell
-$env:X_COOKIES = "auth_token=PASTE_HERE; ct0=PASTE_HERE"
-$env:X_USERNAME = "your_x_handle_without_the_at_sign"
-python collect_x.py login
-```
+| Topic | Hashtags |
+|---|---|
+| US Politics | #uspolitics #Republicans #Democrats |
+| K-pop | #bts #blackpink #kpop |
+| Movies | #movies #film #netflix |
+| Tech | #AI #tech #iphone |
+| Pets | #pets #catlovers #doglovers |
+| Food | #recipe #cooking #foodie |
 
-`login` saves the cookies to `~/.twscrape_kmutt/accounts.db` (outside this repo) and lists the saved accounts. With 2 accounts, set the variables and run `login` once for each. More accounts means shorter rate-limit waits.
+## 2. Test scrape
 
-**Never paste real cookie values into a file**, including this README and the comments in `collect_x.py`. Type them only in the terminal.
+**First test (`test_twscrape.py`).** We checked that we can log in to X with `twscrape` and collect tweets for one hashtag.
 
-**3. Check the queries (nothing is sent to X)**
+**Small test run (first version of `collect_x.py`, data saved in `data/pilot/`).** Before the real run, we did a quick, small scrape with the first version of our code for 9–15 November: 50 posts per hashtag, and the replies under 1 post per hashtag (posts with 20+ replies). Then `collect_x.py summary` made a table for each hashtag (`summary_per_hashtag.csv`) with the number of tweets, the number of parent posts, the % of duplicate text, and the first and last date. Every hashtag returned posts, but the table showed three problems, so we improved the code (the current `collect_x.py`):
 
-```powershell
-python collect_x.py collect --since 2026-11-09 --until 2026-11-16 --dry-run
-```
+| Problem | Evidence in the small test run | What we changed | Result in the real run |
+|---|---|---|---|
+| Posts came only from the last few days | We asked for 9–15 Nov, but all 884 posts were from 13–15 Nov (514 from 15 Nov alone). X shows the newest tweets first, so the search never reached the older days | Search each day separately: 15 posts per day for 7 days | About 260 posts on every day from 9 to 15 Nov |
+| Few pets posts had 20+ replies | #pets and #doglovers found no post with 20+ replies, so they got 0 replies. In the sample, 0 of 147 pets posts had 20+ replies | Need only 10+ replies (same rule for every topic) | All 3 pets hashtags have replies (68 in total) |
+| All replies for a hashtag came from **one post** | Every hashtag had only 1 parent post. For #bts, 22 of 30 replies were the same fan message ("congratulations bts ... paved the way"), 70% duplicate text | Use **7 parent posts per hashtag** (one per day) and up to 20 replies under each | #bts replies come from 6 posts and only 11% are duplicate text |
 
-**4. Pilot run (small)**
+**One more problem in the real run.** The first real run of pets (kept in `data/old_pets_v1/`) had 105 posts per hashtag, but only 90 different tweets: 15 were collected twice, and 9 November was missing. The reason is that X's `since:`/`until:` dates follow the account's time zone, not UTC, so the day windows overlapped. We switched to exact UTC times (`since_time:`/`until_time:`) and collected pets again. Now each pets hashtag has 101–103 different posts, 15 per day from 9 November.
 
-```powershell
-python collect_x.py collect --since 2026-11-09 --until 2026-11-16 --out-dir data/pilot --posts-per-tag 49 --reply-posts 1
-python collect_x.py summary --out-dir data/pilot
-```
+**Still a limit.** Pets posts get few replies even with the 10+ rule: #doglovers has only 7 replies from 1 post. So the pets reply results are based on a small sample.
 
-Check the summary table, then open `data/pilot/spam_check.csv` and mark spam or ads with `1`. Replace any hashtag that has too few tweets or too much spam.
-
-**5. Full run (use the same dates as the pilot)**
+## 3. Real scrape
 
 ```powershell
 python collect_x.py collect --since 2026-11-09 --until 2026-11-16
 python collect_x.py summary --out-dir data/raw
 ```
 
-The result is `data/raw/combined.csv`, which is the input for the notebook.
+- **Dates:** 9–15 November 2026, the same week for every topic.
+- **Posts:** original tweets only (no retweets, no replies), 105 per hashtag.
+- **Replies:** direct English replies under posts with 10+ replies.
+- **Result:** 2,829 tweets (1,846 posts and 983 replies).
 
-`--until` is exclusive, so `2026-11-16` includes tweets from 15 November.
+`summary` puts all posts and replies into one file, `data/raw/combined.csv`, so the notebook reads one table. The `type` column keeps posts and replies apart. A tweet that has two hashtags of the same topic (e.g. #bts and #kpop) is kept once. A tweet found in two different topics is removed, because it can't fairly count for either.
 
-### Waiting for rate limits
+## 4. Clean (in the notebook)
 
-X limits how many requests one account can make, usually per **15-minute** window.
-
-- When the limit is hit, the script **waits up to 15 minutes** (`--wait 900`) and then continues.
-- If the account is still blocked after that, the script stops. **Wait 15 minutes or more and run the same command again.** Finished files are kept and skipped, so it continues where it stopped.
-- With one account, the full run can take **from about 30 minutes to a few hours**, depending on X's limits. Start early.
-
-### Options for `collect`
-
-| Option | Default | Meaning |
+| Step | Rule | Why |
 |---|---|---|
-| `--since` / `--until` | required | Date window (YYYY-MM-DD), `until` is exclusive |
-| `--out-dir` | `data/raw` | Output folder |
-| `--type` | `both` | `post`, `reply` or `both` |
-| `--topics` | all | Only these topics, e.g. `--topics kpop tech` |
-| `--posts-per-tag` | `105` | Posts per hashtag, spread evenly over the days (15 per day for 7 days) |
-| `--reply-posts` | `7` | Parent posts per hashtag, spread over the days (1 per day) |
-| `--per-post` | `20` | Maximum replies per parent post |
-| `--min-replies` | `10` | Minimum replies a parent post needs |
-| `--wait` | `900` | Seconds to wait when rate-limited |
-| `--dry-run` | off | Print the queries only |
+| 1 | Remove tweets with a link **and** 3+ hashtags | These are ads and auto-posts, not people talking |
+| 2 | Remove links and the @names at the start of replies | Only the message should be scored |
+| 3 | Remove the same text repeated in a topic | Copy-paste campaigns and bots |
+| 4 | Remove texts under 3 words | Too short to judge ("lol") |
 
-### Output columns
+After cleaning, **1,594 tweets** were left. Most removed tweets were ad **posts** (pets posts went from 304 to 83). Almost all replies stayed.
 
-`topic, level, hashtag, type, tweet_id, parent_id, text, created_at, lang, like_count, reply_count, retweet_count, parent_text`
+## 5. Analyse (in the notebook)
 
-Usernames and URLs are not saved. A tweet can still be found with `x.com/i/status/<tweet_id>`.
+We score every tweet with three methods and call it toxic if the score is 0.5 or more:
 
-**Duplicates:** a tweet found under two hashtags of the same topic (for example #bts and #kpop) is kept once. A tweet that falls in two different topics is dropped from both.
+| Method | Idea |
+|---|---|
+| Bad-word list | Is any word from the LDNOOBW list in the tweet? (`resources/ldnoobw_en.txt`) |
+| Detoxify (unbiased) | AI model trained on online comments. Gives a toxicity score and 5 types. We load its weights (`unitary/unbiased-toxic-roberta`) with `transformers` |
+| Twitter-RoBERTa | AI model trained on tweets (`cardiffnlp/twitter-roberta-base-offensive`) |
+
+Then we compare topics, posts vs. replies, our guess vs. the data, and the three methods. Two members also hand-label 250 tweets so we can see which method is right.
+
+```powershell
+pip install torch transformers nltk scikit-learn scipy matplotlib pandas
+```
+
+Open `toxicity_analysis.ipynb` and choose **Run All**. The first run downloads the models and scores all tweets, which takes a few minutes. The scores are saved in `data/scored.csv` and reused next time.
+
+---
+
+## How to run the scraper
+
+You need Python, `pip install twscrape pandas`, and an X account (use a spare one, because X can block accounts that scrape).
+
+1. Log in to x.com in your browser. Copy `auth_token` and `ct0` from DevTools (Application > Cookies > `https://x.com`).
+2. Save them (once per account):
+
+   ```powershell
+   $env:X_COOKIES = "auth_token=PASTE_HERE; ct0=PASTE_HERE"
+   $env:X_USERNAME = "your_x_handle"
+   python collect_x.py login
+   ```
+
+3. Check the searches without sending anything: add `--dry-run` to the collect command.
+4. Run the collect and summary commands from section 3.
+
+**Rate limits:** X only allows a certain number of searches every 15 minutes. The script waits by itself. If it stops, wait 15 minutes and run the same command again. Finished files are skipped. The full run took about 1–2 hours.
 
 ## Files
 
-| File | Purpose |
+| File | What it is |
 |---|---|
-| `collect_x.py` | Main scraper: collects posts and replies for all topics, and summarises the results |
-| `test_twscrape.py` | Earlier test script for one hashtag (kept for reference) |
-| `data/pilot/` | Pilot run output |
-| `data/raw/` | Full run output, including `combined.csv` |
-| `../vote_topic.csv` | The group's topic votes |
+| `collect_x.py` | Scraper: collects posts and replies, then makes `combined.csv` |
+| `toxicity_analysis.ipynb` | Cleaning, scoring and all results |
+| `test_twscrape.py` | Our first scraping test (one hashtag) |
+| `resources/ldnoobw_en.txt` | Bad-word list |
+| `figures/` | Figures for the report and slides |
+| `data/` | Tweets, scores and label sheets. **Not committed to Git** |
 
-The `data/` folders are not committed to Git.
+## Important
 
-## Important notes
+- **Never put cookies in a file.** They give full access to the X account. Type them only in the terminal.
+- **Clear notebook outputs before committing**, because they show tweet text:
+  `jupyter nbconvert --clear-output --inplace toxicity_analysis.ipynb`
+- **No usernames in the report or slides.** We don't save usernames or links.
+- **Scraping breaks X's terms of use.** twscrape uses X's private API. We say this in the report.
 
-- **Keep cookies private.** They give full access to the account. Never put them in a script, this README, a notebook or a Git commit. Set them only in the terminal.
-- **Protect the data.** Don't show tweet IDs or usernames in the report or slides.
-- **Know the risks.** twscrape uses X's private API, and scraping without written consent breaks X's terms. The account can be blocked, and the tool can stop working if X changes its API. We will disclose this method in the report.
-- **Collect slowly.** Run the pilot first, and don't run several scrapes at the same time on one account.
+## Limitations
 
-## Limitations to report
-
-- One platform only (X), English only, and one date window (just after the 2026 US midterm elections).
-- Hashtag sampling: tweets with hashtags may not represent all tweets on a topic.
-- K-pop uses the two largest fandoms, which may have more fan conflict than smaller fandoms.
-- The AI models were trained on other data (Jigsaw comments, older tweets), and they see a reply without its full conversation.
+- One platform (X), English only, one week (just after the 2026 US midterm elections).
+- Hashtag tweets may not represent everything people say about a topic.
+- Posts come mostly from the last hours of each day, because X shows the newest first.
+- Pets has few replies (53 after cleaning), so its result is less certain.
+- K-pop uses the two biggest fandoms, which may argue more than smaller ones.
+- The AI models were trained on other data, and they see a reply without the full conversation.
