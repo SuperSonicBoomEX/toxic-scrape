@@ -124,6 +124,10 @@ We score every tweet with three methods and call it toxic if the score is 0.5 or
 | Detoxify (unbiased) | AI model trained on online comments. Gives a toxicity score and 5 types. We load its weights (`unitary/unbiased-toxic-roberta`) with `transformers` |
 | Twitter-RoBERTa | AI model trained on tweets (`cardiffnlp/twitter-roberta-base-offensive`) |
 
+**First look.** All three methods put US Politics first. For replies, Detoxify and RoBERTa give the same order (US Politics > K-pop > Pets > Movies > Food > Tech). The word list finds almost no bad words outside politics (0–2 replies per topic).
+
+**Our guess vs. the data.** For each method we rank the 6 topics by % toxic replies and call the top 2 High, the middle 2 Mid and the bottom 2 Low, the same 2/2/2 split as our vote. Detoxify and RoBERTa match our guess for 4 of 6 topics: Tech came out lower and Pets higher than we guessed (but Pets has only 53 replies). The word list matches only 1 of 6.
+
 Then we compare topics, posts vs. replies, our guess vs. the data, and the three methods. Two members also hand-label 250 tweets so we can see which method is right.
 
 ```powershell
