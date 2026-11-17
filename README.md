@@ -116,7 +116,7 @@ After cleaning, **1,594 tweets** were left. Most removed tweets were ad **posts*
 
 ## 5. Analyse (in the notebook)
 
-We score every tweet with three methods and call it toxic if the score is 0.5 or more:
+We score every tweet with three methods and call it toxic if the score is 0.5 or more (for the word list: at least one bad word):
 
 | Method | Idea |
 |---|---|
@@ -124,7 +124,7 @@ We score every tweet with three methods and call it toxic if the score is 0.5 or
 | Detoxify (unbiased) | AI model trained on online comments. Gives a toxicity score and 5 types. We load its weights (`unitary/unbiased-toxic-roberta`) with `transformers` |
 | Twitter-RoBERTa | AI model trained on tweets (`cardiffnlp/twitter-roberta-base-offensive`) |
 
-**First look.** All three methods put US Politics first. For replies, Detoxify and RoBERTa give the same order (US Politics > K-pop > Pets > Movies > Food > Tech). The word list finds almost no bad words outside politics (0–2 replies per topic).
+**First look.** All three methods put US Politics first. For replies, Detoxify and RoBERTa give the same order (US Politics > K-pop > Pets > Movies > Food > Tech). The word list finds almost no bad words outside politics (0–2 replies per topic). Over all topics, replies and posts are about equally toxic (Detoxify: 7.7% of replies, 7.6% of posts).
 
 **Our guess vs. the data.** For each method we rank the 6 topics by % toxic replies and call the top 2 High, the middle 2 Mid and the bottom 2 Low, the same 2/2/2 split as our vote. Detoxify and RoBERTa match our guess for 4 of 6 topics: Tech came out lower and Pets higher than we guessed (but Pets has only 53 replies). The word list matches only 1 of 6.
 
@@ -132,15 +132,15 @@ We score every tweet with three methods and call it toxic if the score is 0.5 or
 
 **A closer look.** Reading the top tweets per topic shows that most "toxic" tweets in calm topics are false alarms: friendly swearing ("Damn these look so good!"), double meanings ("tiny pussy cat") and violent words in a harmless context ("Slap the dog"). Pets' Mid level comes from 3 toxic replies, and only 1 of them is a real attack.
 
+**Type of toxicity.** Insult is the most common type in the topics with enough toxic tweets: US Politics 75%, K-pop 78% and Movies 62%. Swearing (obscene) is second. Threats, identity attacks and sexual content are rare. Tech, Pets and Food have only 4–7 toxic tweets each, so their mix is not reliable.
+
 **The bad-word list vs. the models.** The list misses most toxic tweets: 83 of 122 for Detoxify and 117 of 160 for RoBERTa. 63 tweets are toxic for both models but have no word from the list, mostly insults without swear words (*stupid, pathetic, trash*). The list has few false alarms (4 tweets that neither model calls toxic).
 
-Then we compare topics, posts vs. replies, our guess vs. the data, and the three methods.
-
 ```powershell
-pip install torch transformers nltk scikit-learn scipy matplotlib pandas
+pip install torch transformers nltk scikit-learn matplotlib pandas jupyter
 ```
 
-Open `toxicity_analysis.ipynb` and choose **Run All**. The first run downloads the models and scores all tweets, which takes a few minutes. The scores are saved in `data/scored.csv` and reused next time.
+Open `toxicity_analysis.ipynb` and choose **Run All**. The first run downloads the models, scores all tweets and finds the trigger words (the trigger words alone take about 8 minutes). The results are saved in `data/scored.csv` and `data/trigger_words.csv` and reused next time.
 
 ---
 
@@ -171,7 +171,7 @@ You need Python, `pip install twscrape pandas`, and an X account (use a spare on
 | `test_twscrape.py` | Our first scraping test (one hashtag) |
 | `resources/ldnoobw_en.txt` | Bad-word list |
 | `figures/` | Figures for the report and slides |
-| `data/` | Tweets, scores and label sheets. **Not committed to Git** |
+| `data/` | Tweets and scores. **Not committed to Git** |
 
 ## Important
 
@@ -187,3 +187,4 @@ You need Python, `pip install twscrape pandas`, and an X account (use a spare on
 - Pets has few replies (53 after cleaning), so its result is less certain.
 - K-pop uses the two biggest fandoms, which may argue more than smaller ones.
 - The AI models were trained on other data, and they see a reply without the full conversation.
+- We did not label tweets by hand, so we can't measure which method is right (no accuracy or F1). Instead we read the top tweets in each topic (notebook section 7). For the same reason, we kept the 0.5 threshold because the two models agree well there, not because it was shown to be the most accurate.

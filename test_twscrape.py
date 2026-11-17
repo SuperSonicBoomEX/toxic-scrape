@@ -1,3 +1,13 @@
+"""Our first scraping test: can we log in to X with twscrape and collect one hashtag?
+
+How to run (inside this folder):
+    $env:X_COOKIES = "auth_token=PASTE_HERE; ct0=PASTE_HERE"
+    $env:X_USERNAME = "your_x_handle"
+    python test_twscrape.py --hashtag gaming --limit 50      # posts
+    python test_twscrape.py --hashtag gaming --replies       # replies under a few posts
+
+The real collection is done by collect_x.py.
+"""
 import argparse
 import asyncio
 import csv
@@ -11,13 +21,14 @@ from twscrape.accounts_pool import NoAccountError
 
 DEFAULT_DB = Path.home() / ".twscrape_kmutt" / "accounts.db"
 OUTPUT_DIR = Path(__file__).parent / "data" / "raw"
+# We don't save usernames or links (links contain the username), to protect people's privacy.
 COLUMNS = [
-    "platform", "topic", "id", "url", "text", "created_at", "lang",
+    "platform", "topic", "id", "text", "created_at", "lang",
     "like_count", "reply_count", "retweet_count",
 ]
 # Each row is one comment, with the post it replied to repeated alongside it.
-REPLY_COLUMNS = COLUMNS[:7] + [
-    "like_count", "post_id", "post_url", "post_text", "post_created_at",
+REPLY_COLUMNS = COLUMNS[:6] + [
+    "like_count", "post_id", "post_text", "post_created_at",
     "post_like_count", "post_reply_count", "post_retweet_count",
 ]
 WAIT_SECONDS = 60  # give up instead of waiting forever when rate-limited
@@ -96,28 +107,28 @@ async def collect_replies(api, hashtag, days, posts, per_post, min_replies):
 
 
 def save_csv(tweets, hashtag, path):
-    """Save posts. URLs contain usernames, so keep them out of the report and slides."""
+    """Save posts (no usernames or links)."""
     path.parent.mkdir(parents=True, exist_ok=True)
     with open(path, "w", newline="", encoding="utf-8") as f:
         writer = csv.writer(f)
         writer.writerow(COLUMNS)
         for t in tweets:
             writer.writerow([
-                "twitter", hashtag, t.id_str, t.url, t.rawContent, t.date.isoformat(), t.lang,
+                "twitter", hashtag, t.id_str, t.rawContent, t.date.isoformat(), t.lang,
                 t.likeCount, t.replyCount, t.retweetCount,
             ])
 
 
 def save_replies_csv(pairs, hashtag, path):
-    """Save one row per comment, with its post's details. URLs contain usernames."""
+    """Save one row per comment, with its post's details (no usernames or links)."""
     path.parent.mkdir(parents=True, exist_ok=True)
     with open(path, "w", newline="", encoding="utf-8") as f:
         writer = csv.writer(f)
         writer.writerow(REPLY_COLUMNS)
         for post, r in pairs:
             writer.writerow([
-                "twitter", hashtag, r.id_str, r.url, r.rawContent, r.date.isoformat(), r.lang,
-                r.likeCount, post.id_str, post.url, post.rawContent, post.date.isoformat(),
+                "twitter", hashtag, r.id_str, r.rawContent, r.date.isoformat(), r.lang,
+                r.likeCount, post.id_str, post.rawContent, post.date.isoformat(),
                 post.likeCount, post.replyCount, post.retweetCount,
             ])
 
