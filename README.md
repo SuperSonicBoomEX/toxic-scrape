@@ -120,7 +120,7 @@ We score every tweet with three methods and call it toxic if the score is 0.5 or
 
 | Method | Idea |
 |---|---|
-| Bad-word list | Is any word from the LDNOOBW list in the tweet? (`resources/ldnoobw_en.txt`) |
+| Bad-word list | Is any word from the [LDNOOBW](https://github.com/LDNOOBW/List-of-Dirty-Naughty-Obscene-and-Otherwise-Bad-Words) English list (403 words and phrases) in the tweet? (`resources/ldnoobw_en.txt`). A widely used GitHub list. We also tested two other lists ([badwordslist](https://code.google.com/archive/p/badwordslist/) and [google-profanity-words](https://github.com/coffee-and-fun/google-profanity-words)): they flagged more harmless words (e.g. "turkey breasts", "hell yeah") and still missed more than half of the toxic tweets, so we kept LDNOOBW |
 | Detoxify (unbiased) | AI model trained on online comments. Gives a toxicity score and 5 types. We load its weights (`unitary/unbiased-toxic-roberta`) with `transformers` |
 | Twitter-RoBERTa | AI model trained on tweets (`cardiffnlp/twitter-roberta-base-offensive`) |
 
@@ -128,7 +128,13 @@ We score every tweet with three methods and call it toxic if the score is 0.5 or
 
 **Our guess vs. the data.** For each method we rank the 6 topics by % toxic replies and call the top 2 High, the middle 2 Mid and the bottom 2 Low, the same 2/2/2 split as our vote. Detoxify and RoBERTa match our guess for 4 of 6 topics: Tech came out lower and Pets higher than we guessed (but Pets has only 53 replies). The word list matches only 1 of 6.
 
-Then we compare topics, posts vs. replies, our guess vs. the data, and the three methods. Two members also hand-label 250 tweets so we can see which method is right.
+**Thresholds.** We also tried 0.2, 0.5 and 0.8 for both models. For replies, Detoxify gives 4/6 at all three. RoBERTa gives 4/6 only at 0.5, because its scores are spread out (450 tweets above 0.2, only 50 above 0.8). The models agree most at Detoxify 0.2 + RoBERTa 0.5 (kappa 0.73), almost the same as 0.5 + 0.5 (0.70), so we keep 0.5.
+
+**A closer look.** Reading the top tweets per topic shows that most "toxic" tweets in calm topics are false alarms: friendly swearing ("Damn these look so good!"), double meanings ("tiny pussy cat") and violent words in a harmless context ("Slap the dog"). Pets' Mid level comes from 3 toxic replies, and only 1 of them is a real attack.
+
+**The bad-word list vs. the models.** The list misses most toxic tweets: 83 of 122 for Detoxify and 117 of 160 for RoBERTa. 63 tweets are toxic for both models but have no word from the list, mostly insults without swear words (*stupid, pathetic, trash*). The list has few false alarms (4 tweets that neither model calls toxic).
+
+Then we compare topics, posts vs. replies, our guess vs. the data, and the three methods.
 
 ```powershell
 pip install torch transformers nltk scikit-learn scipy matplotlib pandas
@@ -170,10 +176,8 @@ You need Python, `pip install twscrape pandas`, and an X account (use a spare on
 ## Important
 
 - **Never put cookies in a file.** They give full access to the X account. Type them only in the terminal.
-- **Clear notebook outputs before committing**, because they show tweet text:
-  `jupyter nbconvert --clear-output --inplace toxicity_analysis.ipynb`
 - **No usernames in the report or slides.** We don't save usernames or links.
-- **Scraping breaks X's terms of use.** twscrape uses X's private API. We say this in the report.
+- **Scraping breaks X's terms of use.** twscrape uses X's private API.
 
 ## Limitations
 
